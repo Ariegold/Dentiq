@@ -1,820 +1,1134 @@
-import { useState } from "react";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Dentiq by Mythros — Dental Practice Accountability Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:       #0B1120;
+    --surface:  #111827;
+    --card:     #1A2438;
+    --cardh:    #1F2D45;
+    --border:   #243454;
+    --accent:   #00D4A8;
+    --accentd:  #00A882;
+    --accentg:  rgba(0,212,168,0.12);
+    --gold:     #F5A623;
+    --danger:   #F43F5E;
+    --warning:  #FBBF24;
+    --success:  #10B981;
+    --text:     #F1F5F9;
+    --muted:    #64748B;
+    --soft:     #94A3B8;
+    --radius:   14px;
+    --sidebar:  232px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+    display: flex;
+    overflow: hidden;
+    height: 100vh;
+  }
 
-// ─── Brand & Theme ────────────────────────────────────────────────────────────
-const B = {
-  bg: "#0B1120",
-  surface: "#111827",
-  card: "#1A2438",
-  cardHover: "#1F2D45",
-  border: "#243454",
-  accent: "#00D4A8",
-  accentDark: "#00A882",
-  accentGlow: "rgba(0,212,168,0.15)",
-  gold: "#F5A623",
-  goldDark: "#D4891A",
-  danger: "#F43F5E",
-  warning: "#FBBF24",
-  success: "#10B981",
-  text: "#F1F5F9",
-  muted: "#64748B",
-  soft: "#94A3B8",
-};
+  /* ── Sidebar ── */
+  #sidebar {
+    width: var(--sidebar);
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    transition: width 0.3s ease;
+    overflow: hidden;
+  }
+  #sidebar.collapsed { width: 0; }
 
-// ─── Market Config ─────────────────────────────────────────────────────────────
-const MARKETS = {
-  NG: { flag: "🇳🇬", name: "Nigeria", currency: "₦", code: "NGN", city: "Lagos", whatsapp: "+234" },
-  KE: { flag: "🇰🇪", name: "Kenya", currency: "KSh", code: "KES", city: "Nairobi", whatsapp: "+254" },
-};
+  .sidebar-logo {
+    padding: 22px 18px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo-mark {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .logo-icon {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), #0096FF);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800; font-size: 20px; color: #fff;
+    flex-shrink: 0;
+  }
+  .logo-text { line-height: 1; white-space: nowrap; }
+  .logo-text strong { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 800; color: var(--text); display: block; }
+  .logo-text span { font-size: 10px; color: var(--muted); letter-spacing: 0.08em; }
 
-// ─── Demo Practice ─────────────────────────────────────────────────────────────
-const PRACTICE = {
-  name: "SmileCare Dental Clinic",
-  owner: "Dr. Amara Okonkwo",
-  address: "14 Victoria Island, Lagos, Nigeria",
-  market: "NG",
-  plan: "Growth",
-  staff: 6,
-};
+  .practice-card {
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+  .practice-card strong { font-size: 12px; font-weight: 700; display: block; color: var(--text); }
+  .practice-card small { font-size: 11px; color: var(--muted); display: block; margin-top: 2px; }
 
-// ─── Demo Data ────────────────────────────────────────────────────────────────
-const STAFF = [
-  { id: 1, name: "Chioma Eze", role: "Dental Nurse", avatar: "CE", color: "#6366F1" },
-  { id: 2, name: "Emeka Adeyemi", role: "Receptionist", avatar: "EA", color: "#EC4899" },
-  { id: 3, name: "Fatima Bello", role: "Dental Nurse", avatar: "FB", color: "#F59E0B" },
-  { id: 4, name: "Dr. Amara Okonkwo", role: "Principal Dentist", avatar: "AO", color: "#00D4A8" },
-];
+  .market-switcher { padding: 12px 18px; border-bottom: 1px solid var(--border); }
+  .market-label { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .market-btns { display: flex; gap: 6px; }
+  .market-btn {
+    flex: 1; padding: 8px 4px;
+    border-radius: 8px; cursor: pointer;
+    text-align: center;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .market-btn:hover, .market-btn.active {
+    background: var(--accentg);
+    border-color: rgba(0,212,168,0.4);
+  }
+  .market-btn .flag { font-size: 18px; display: block; }
+  .market-btn .mname { font-size: 10px; font-weight: 700; color: var(--muted); display: block; margin-top: 2px; }
+  .market-btn.active .mname { color: var(--accent); }
 
-const JOBS = [
-  { id: "j1", cat: "🔓 Opening", text: "Key secured, alarm deactivated", role: "Nurse" },
-  { id: "j2", cat: "🔓 Opening", text: "Generator checked and fuelled", role: "Nurse" },
-  { id: "j3", cat: "🔓 Opening", text: "Reception area cleaned and ready", role: "Receptionist" },
-  { id: "j4", cat: "🔓 Opening", text: "Appointment diary reviewed", role: "Receptionist" },
-  { id: "j5", cat: "🔓 Opening", text: "Treatment trays set per diary", role: "Nurse" },
-  { id: "j6", cat: "🦺 PPE & Infection", text: "PPE protocol followed — mask, gloves, apron", role: "Nurse" },
-  { id: "j7", cat: "🦺 PPE & Infection", text: "Dental chair water bottle disinfected", role: "Nurse" },
-  { id: "j8", cat: "🦺 PPE & Infection", text: "Autoclave cycle run and validated", role: "Nurse" },
-  { id: "j9", cat: "🦺 PPE & Infection", text: "All surfaces decontaminated", role: "Nurse" },
-  { id: "j10", cat: "🧪 Materials", text: "Stock levels checked and logged", role: "Nurse" },
-  { id: "j11", cat: "🧪 Materials", text: "Compressor and suction checked", role: "Nurse" },
-  { id: "j12", cat: "🧪 Materials", text: "Emergency kit checked — contents and expiry", role: "Nurse" },
-  { id: "j13", cat: "🤝 Patient Experience", text: "Waiting area refreshed and stocked", role: "Receptionist" },
-  { id: "j14", cat: "🤝 Patient Experience", text: "WhatsApp confirmations sent to today's patients", role: "Receptionist" },
-  { id: "j15", cat: "🤝 Patient Experience", text: "Deposit status confirmed for all bookings", role: "Receptionist" },
-  { id: "j16", cat: "🔒 Closing", text: "All clinical areas decontaminated", role: "Nurse" },
-  { id: "j17", cat: "🔒 Closing", text: "Autoclave final cycle logged", role: "Nurse" },
-  { id: "j18", cat: "🔒 Closing", text: "Cash reconciled and secured", role: "Receptionist" },
-  { id: "j19", cat: "🔒 Closing", text: "Generator switched off", role: "Nurse" },
-  { id: "j20", cat: "🔒 Closing", text: "Premises locked and alarm set", role: "Receptionist" },
-];
+  nav { flex: 1; padding: 12px 10px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 10px;
+    cursor: pointer; border-left: 3px solid transparent;
+    transition: all 0.15s; white-space: nowrap;
+  }
+  .nav-item:hover { background: var(--bg); }
+  .nav-item.active {
+    background: var(--accentg);
+    border-left-color: var(--accent);
+  }
+  .nav-item .ni { font-size: 17px; }
+  .nav-item .nl { font-size: 14px; font-weight: 400; color: var(--text); }
+  .nav-item.active .nl { font-weight: 700; color: var(--accent); }
 
-const CATEGORIES = [...new Set(JOBS.map(j => j.cat))];
+  .sidebar-footer {
+    padding: 14px 18px;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+    white-space: nowrap;
+  }
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 8px var(--success);
+    flex-shrink: 0;
+  }
+  .sidebar-footer span { font-size: 11px; color: var(--muted); }
 
-const APPOINTMENTS = [
-  { id: 1, time: "08:30", patient: "Kemi Adeyemi", type: "Examination", deposit: 5000, paid: true, phone: "+234 801 234 5678" },
-  { id: 2, time: "09:15", patient: "Chukwuemeka Obi", type: "Scale & Polish", deposit: 3000, paid: true, phone: "+234 802 345 6789" },
-  { id: 3, time: "10:00", patient: "Blessing Nwosu", type: "Composite Filling", deposit: 8000, paid: false, phone: "+234 803 456 7890" },
-  { id: 4, time: "11:00", patient: "Taiwo Afolabi", type: "Teeth Whitening", deposit: 15000, paid: true, phone: "+234 804 567 8901" },
-  { id: 5, time: "12:00", patient: "Grace Mensah", type: "Crown Fitting", deposit: 20000, paid: true, phone: "+234 805 678 9012" },
-  { id: 6, time: "14:00", patient: "Olumide Bakare", type: "Extraction", deposit: 6000, paid: false, phone: "+234 806 789 0123" },
-  { id: 7, time: "15:30", patient: "Ngozi Okonkwo", type: "New Patient Exam", deposit: 5000, paid: true, phone: "+234 807 890 1234" },
-];
+  /* ── Main ── */
+  #main {
+    flex: 1; display: flex; flex-direction: column;
+    min-width: 0; overflow: hidden;
+  }
 
-const COMPLIANCE = [
-  { id: 1, item: "MDCN Registration", status: "compliant", expiry: "2026-06-30", cat: "Registration" },
-  { id: 2, item: "Infection Control Audit", status: "compliant", expiry: "2025-12-01", cat: "Clinical" },
-  { id: 3, item: "Fire Safety Certificate", status: "review", expiry: "2025-11-15", cat: "Safety" },
-  { id: 4, item: "Staff BVN Verification", status: "compliant", expiry: "2026-01-01", cat: "HR" },
-  { id: 5, item: "Waste Disposal Contract", status: "overdue", expiry: "2025-09-01", cat: "Environmental" },
-  { id: 6, item: "Autoclave Validation Log", status: "compliant", expiry: "2026-03-01", cat: "Equipment" },
-  { id: 7, item: "CPR Training — All Staff", status: "review", expiry: "2025-10-30", cat: "Training" },
-];
+  /* ── Topbar ── */
+  #topbar {
+    height: 58px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+    gap: 12px;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 14px; }
+  .menu-btn {
+    background: none; border: none;
+    color: var(--muted); cursor: pointer;
+    font-size: 20px; padding: 4px; line-height: 1;
+  }
+  .page-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; }
+  .topbar-right { display: flex; align-items: center; gap: 14px; }
+  .market-pill {
+    background: var(--accentg);
+    border: 1px solid rgba(0,212,168,0.3);
+    border-radius: 8px; padding: 5px 12px;
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 700; color: var(--accent);
+  }
+  .notif { position: relative; cursor: pointer; font-size: 18px; color: var(--muted); }
+  .notif-dot {
+    position: absolute; top: -2px; right: -2px;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--danger);
+  }
+  .user-pill { display: flex; align-items: center; gap: 8px; }
+  .avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), #0096FF);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 11px; color: #fff;
+    flex-shrink: 0;
+  }
+  .user-name { font-weight: 600; font-size: 13px; }
 
-const WEEKLY = [
-  { day: "Mon", rev: 42000 }, { day: "Tue", rev: 68000 },
-  { day: "Wed", rev: 35000 }, { day: "Thu", rev: 81000 },
-  { day: "Fri", rev: 54000 }, { day: "Sat", rev: 29000 },
-];
+  /* ── Content ── */
+  #content {
+    flex: 1; overflow-y: auto; padding: 24px;
+  }
 
-const fmt = (n, market = "NG") => `${MARKETS[market].currency}${n.toLocaleString()}`;
+  .view { display: none; flex-direction: column; gap: 20px; }
+  .view.active { display: flex; }
 
-// ─── Shared Components ────────────────────────────────────────────────────────
+  /* ── Cards ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    transition: all 0.2s;
+  }
+  .card.glow { border-color: rgba(0,212,168,0.3); box-shadow: 0 0 24px var(--accentg); }
+  .card.clickable { cursor: pointer; }
+  .card.clickable:hover { background: var(--cardh); border-color: rgba(0,212,168,0.4); }
 
-const Badge = ({ children, type = "default" }) => {
-  const map = {
-    default: { bg: "#1E3A5F22", color: B.soft },
-    success: { bg: "#064E3B33", color: B.success },
-    warning: { bg: "#45330033", color: B.warning },
-    danger: { bg: "#4C0519aa", color: B.danger },
-    accent: { bg: B.accentGlow, color: B.accent },
-    gold: { bg: "#78350F33", color: B.gold },
-  };
-  const c = map[type] || map.default;
-  return (
-    <span style={{
-      background: c.bg, color: c.color,
-      padding: "3px 10px", borderRadius: 20,
-      fontSize: 11, fontWeight: 700,
-      letterSpacing: "0.05em", textTransform: "uppercase", whiteSpace: "nowrap",
-    }}>{children}</span>
-  );
-};
+  .card-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px; margin-bottom: 14px; }
 
-const Card = ({ children, style = {}, onClick, glow }) => (
-  <div onClick={onClick} style={{
-    background: B.card,
-    border: `1px solid ${glow ? B.accent + "44" : B.border}`,
-    borderRadius: 16, padding: 20,
-    boxShadow: glow ? `0 0 24px ${B.accentGlow}` : "none",
-    transition: "all 0.2s",
-    cursor: onClick ? "pointer" : "default",
-    ...style,
-  }}
-    onMouseEnter={e => { if (onClick) { e.currentTarget.style.background = B.cardHover; e.currentTarget.style.borderColor = B.accent + "66"; } }}
-    onMouseLeave={e => { if (onClick) { e.currentTarget.style.background = B.card; e.currentTarget.style.borderColor = glow ? B.accent + "44" : B.border; } }}
-  >{children}</div>
-);
+  /* ── KPI Grid ── */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+  .kpi-2 { grid-template-columns: repeat(2, 1fr); }
+  .kpi-3 { grid-template-columns: repeat(3, 1fr); }
 
-const KPI = ({ label, value, sub, accent, icon, gold }) => (
-  <Card glow={accent}>
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-      <div>
-        <div style={{ color: B.muted, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>{label}</div>
-        <div style={{ fontSize: 26, fontWeight: 900, lineHeight: 1, color: gold ? B.gold : accent ? B.accent : B.text }}>{value}</div>
-        {sub && <div style={{ color: B.muted, fontSize: 12, marginTop: 6 }}>{sub}</div>}
+  .kpi {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+  }
+  .kpi.accent { border-color: rgba(0,212,168,0.3); box-shadow: 0 0 20px var(--accentg); }
+  .kpi-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .kpi-label { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .kpi-value { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; line-height: 1; color: var(--text); }
+  .kpi-value.accent-val { color: var(--accent); }
+  .kpi-value.gold-val { color: var(--gold); }
+  .kpi-sub { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .kpi-icon { font-size: 24px; opacity: 0.6; }
+
+  /* ── Badges ── */
+  .badge {
+    display: inline-block;
+    padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap;
+  }
+  .badge-default { background: rgba(30,58,95,0.3); color: var(--soft); }
+  .badge-success { background: rgba(6,78,59,0.4); color: var(--success); }
+  .badge-warning { background: rgba(69,51,0,0.4); color: var(--warning); }
+  .badge-danger  { background: rgba(76,5,25,0.6); color: var(--danger); }
+  .badge-accent  { background: var(--accentg); color: var(--accent); }
+  .badge-gold    { background: rgba(120,53,15,0.3); color: var(--gold); }
+
+  /* ── Progress bar ── */
+  .bar-wrap { background: var(--border); border-radius: 99px; overflow: hidden; }
+  .bar-fill {
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--accent), var(--accentd));
+    transition: width 0.6s ease;
+  }
+
+  /* ── Buttons ── */
+  .btn {
+    border: none; border-radius: 10px;
+    padding: 11px 20px; font-weight: 700; font-size: 13px;
+    cursor: pointer; font-family: 'DM Sans', sans-serif;
+    transition: opacity 0.15s; letter-spacing: 0.02em;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: linear-gradient(135deg, var(--accent), #0096FF); color: #fff; box-shadow: 0 4px 20px var(--accentg); }
+  .btn-gold { background: linear-gradient(135deg, var(--gold), #D4891A); color: #fff; box-shadow: 0 4px 16px rgba(245,166,35,0.3); }
+  .btn-ghost { background: transparent; color: var(--accent); border: 1px solid rgba(0,212,168,0.3); }
+  .btn-danger { background: rgba(244,63,94,0.15); color: var(--danger); border: 1px solid rgba(244,63,94,0.3); }
+  .btn-sm { padding: 7px 14px; font-size: 12px; }
+  .btn-full { width: 100%; justify-content: center; }
+
+  /* ── Form inputs ── */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-field { display: flex; flex-direction: column; gap: 6px; }
+  .form-label { font-size: 10px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); }
+  .form-input, .form-select {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 11px 14px;
+    color: var(--text); font-size: 14px; font-family: 'DM Sans', sans-serif;
+    outline: none; transition: border-color 0.15s; width: 100%;
+  }
+  .form-input:focus, .form-select:focus { border-color: var(--accent); }
+
+  /* ── Page header ── */
+  .page-header { margin-bottom: 4px; }
+  .page-header h2 { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 900; }
+  .page-header p { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+  /* ── List rows ── */
+  .list-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; background: var(--surface);
+    border-radius: 10px; gap: 12px;
+    transition: background 0.15s;
+  }
+  .list-row:hover { background: var(--cardh); }
+  .list-row + .list-row { margin-top: 8px; }
+
+  .row-left { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+  .row-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+  .apt-time { color: var(--accent); font-weight: 800; font-size: 13px; min-width: 44px; }
+  .row-name { font-weight: 600; color: var(--text); font-size: 14px; }
+  .row-sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+
+  /* ── Checkbox ── */
+  .check-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 14px; border-radius: 10px;
+    cursor: pointer; border: 1px solid transparent;
+    transition: all 0.15s; background: var(--surface);
+  }
+  .check-row:hover { background: var(--cardh); }
+  .check-row.done { background: #052E1C; border-color: #065F46; }
+  .check-row + .check-row { margin-top: 6px; }
+
+  .checkbox {
+    width: 22px; height: 22px; border-radius: 6px;
+    border: 2px solid var(--border); background: transparent;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s; flex-shrink: 0; font-size: 13px;
+  }
+  .check-row.done .checkbox { background: var(--success); border-color: var(--success); }
+  .check-row .check-text { flex: 1; color: var(--text); font-size: 14px; }
+  .check-row.done .check-text { color: var(--muted); text-decoration: line-through; }
+
+  /* ── Team pills ── */
+  .team-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+  .team-pill {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface); padding: 9px 14px; border-radius: 10px;
+  }
+  .team-avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 11px; color: #fff; flex-shrink: 0;
+  }
+  .team-name { font-weight: 600; font-size: 13px; }
+  .team-role { font-size: 11px; color: var(--muted); }
+  .online-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 6px var(--success); }
+
+  /* ── Staff assign btns ── */
+  .assign-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .assign-btn {
+    padding: 7px 14px; border-radius: 8px; cursor: pointer;
+    font-weight: 600; font-size: 13px; background: var(--surface);
+    color: var(--text); border: 1px solid var(--border);
+    transition: all 0.15s; font-family: 'DM Sans', sans-serif;
+  }
+  .assign-btn.selected { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  /* ── Mini bar chart ── */
+  .mini-chart { display: flex; gap: 8px; align-items: flex-end; margin-top: 20px; }
+  .mini-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+  .mini-bar {
+    width: 100%; background: linear-gradient(180deg, var(--accent), var(--accentd));
+    border-radius: 5px 5px 0 0; transition: height 0.4s ease;
+  }
+  .mini-bar-label { font-size: 11px; font-weight: 600; color: var(--muted); }
+  .mini-bar-val { font-size: 10px; color: var(--muted); }
+
+  /* ── Quick actions ── */
+  .quick-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+  .quick-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px;
+    text-align: center; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .quick-card:hover { background: var(--cardh); border-color: rgba(0,212,168,0.4); transform: translateY(-2px); }
+  .quick-icon { font-size: 26px; margin-bottom: 8px; }
+  .quick-label { font-weight: 700; font-size: 13px; }
+
+  /* ── Deposit box ── */
+  .deposit-box {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--surface); border-radius: 12px;
+    padding: 14px 18px; margin: 14px 0;
+  }
+  .deposit-amount { color: var(--gold); font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 900; }
+  .deposit-channels { display: flex; flex-direction: column; gap: 6px; }
+  .channel-line { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+
+  /* ── Success state ── */
+  .success-state { text-align: center; padding: 40px 20px; }
+  .success-icon { font-size: 56px; margin-bottom: 16px; }
+  .success-title { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: var(--accent); margin-bottom: 12px; }
+  .message-preview {
+    background: var(--surface); border-radius: 12px;
+    padding: 16px; margin: 16px 0; text-align: left;
+  }
+  .message-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-weight: 600; }
+  .message-body { font-size: 13px; color: var(--muted); line-height: 1.6; font-style: italic; }
+
+  /* ── n8n banner ── */
+  .n8n-banner {
+    display: flex; gap: 14px; align-items: center;
+    background: var(--accentg); border: 1px solid rgba(0,212,168,0.25);
+    border-radius: var(--radius); padding: 16px;
+  }
+  .n8n-icon { font-size: 32px; flex-shrink: 0; }
+  .n8n-title { font-weight: 800; color: var(--accent); margin-bottom: 4px; }
+  .n8n-desc { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+  /* ── WhatsApp template ── */
+  .wa-template {
+    background: var(--surface); border-radius: 12px;
+    border: 1px solid var(--border); padding: 14px;
+  }
+  .wa-template + .wa-template { margin-top: 8px; }
+  .wa-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .wa-title { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+  .wa-msg { font-size: 13px; color: var(--muted); line-height: 1.5; font-style: italic; }
+
+  /* ── Progress row ── */
+  .progress-row {
+    display: flex; justify-content: space-between;
+    align-items: center; margin-bottom: 12px;
+  }
+  .progress-label { font-weight: 600; }
+  .progress-status { font-weight: 700; }
+
+  /* ── Task input row ── */
+  .task-input-row { display: flex; gap: 10px; }
+  .task-input-row .form-input { flex: 1; }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+  /* ── Animations ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .view.active > * { animation: fadeUp 0.3s ease both; }
+  .view.active > *:nth-child(1) { animation-delay: 0.00s; }
+  .view.active > *:nth-child(2) { animation-delay: 0.05s; }
+  .view.active > *:nth-child(3) { animation-delay: 0.10s; }
+  .view.active > *:nth-child(4) { animation-delay: 0.15s; }
+  .view.active > *:nth-child(5) { animation-delay: 0.18s; }
+  .view.active > *:nth-child(6) { animation-delay: 0.21s; }
+
+  /* ── Responsive ── */
+  @media (max-width: 640px) {
+    :root { --sidebar: 220px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .kpi-2, .kpi-3 { grid-template-columns: 1fr 1fr; }
+    #content { padding: 16px; }
+    #topbar { padding: 0 16px; }
+    .user-name { display: none; }
+  }
+  @media (max-width: 420px) {
+    .kpi-2, .kpi-3 { grid-template-columns: 1fr; }
+  }
+
+  /* ── Left border accent for list rows ── */
+  .apt-row { border-left: 3px solid var(--accent); }
+  .apt-row.pending { border-left-color: var(--warning); }
+</style>
+</head>
+<body>
+
+<!-- ═══ SIDEBAR ═══════════════════════════════════════════════════════════ -->
+<div id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">
+      <div class="logo-icon">D</div>
+      <div class="logo-text">
+        <strong>Dentiq</strong>
+        <span>by Mythros</span>
       </div>
-      <span style={{ fontSize: 26, opacity: 0.6 }}>{icon}</span>
     </div>
-  </Card>
-);
-
-const Bar = ({ value, max, color = B.accent, height = 6 }) => (
-  <div style={{ background: B.border, borderRadius: 99, height, overflow: "hidden" }}>
-    <div style={{ width: `${Math.min(100, (value / max) * 100)}%`, height: "100%", background: color, borderRadius: 99, transition: "width 0.6s ease" }} />
+    <div class="practice-card">
+      <strong>SmileCare Dental Clinic</strong>
+      <small>Dr. Amara Okonkwo</small>
+      <div style="margin-top:6px"><span class="badge badge-accent">Growth Plan</span></div>
+    </div>
   </div>
-);
 
-const Input = ({ label, value, onChange, placeholder, type = "text" }) => (
-  <div>
-    <label style={{ color: B.muted, fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>{label}</label>
-    <input type={type} value={value} onChange={onChange} placeholder={placeholder} style={{
-      width: "100%", background: B.surface, border: `1px solid ${B.border}`,
-      borderRadius: 10, padding: "11px 14px", color: B.text, fontSize: 14,
-      outline: "none", boxSizing: "border-box", fontFamily: "inherit",
-    }}
-      onFocus={e => e.target.style.borderColor = B.accent}
-      onBlur={e => e.target.style.borderColor = B.border}
-    />
+  <div class="market-switcher">
+    <div class="market-label">Market</div>
+    <div class="market-btns">
+      <div class="market-btn active" onclick="setMarket('NG',this)">
+        <span class="flag">🇳🇬</span>
+        <span class="mname">Nigeria</span>
+      </div>
+      <div class="market-btn" onclick="setMarket('KE',this)">
+        <span class="flag">🇰🇪</span>
+        <span class="mname">Kenya</span>
+      </div>
+    </div>
   </div>
-);
 
-const Btn = ({ children, onClick, full, variant = "primary", small }) => {
-  const styles = {
-    primary: { background: `linear-gradient(135deg, ${B.accent}, #0096FF)`, color: "#fff", border: "none", boxShadow: `0 4px 20px ${B.accentGlow}` },
-    ghost: { background: "transparent", color: B.accent, border: `1px solid ${B.accent}44` },
-    gold: { background: `linear-gradient(135deg, ${B.gold}, ${B.goldDark})`, color: "#fff", border: "none", boxShadow: "0 4px 16px rgba(245,166,35,0.3)" },
-    danger: { background: B.danger + "22", color: B.danger, border: `1px solid ${B.danger}44` },
-  };
-  return (
-    <button onClick={onClick} style={{
-      ...styles[variant],
-      borderRadius: 10, padding: small ? "8px 16px" : "12px 22px",
-      fontWeight: 700, fontSize: small ? 12 : 14, cursor: "pointer",
-      width: full ? "100%" : "auto", fontFamily: "inherit", letterSpacing: "0.03em",
-      transition: "opacity 0.2s",
-    }}
-      onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
-      onMouseLeave={e => e.currentTarget.style.opacity = "1"}
-    >{children}</button>
-  );
-};
+  <nav>
+    <div class="nav-item active" onclick="showView('dashboard',this)"><span class="ni">🏠</span><span class="nl">Dashboard</span></div>
+    <div class="nav-item" onclick="showView('denttrack',this)"><span class="ni">✅</span><span class="nl">DentTrack</span></div>
+    <div class="nav-item" onclick="showView('appointments',this)"><span class="ni">📅</span><span class="nl">Appointments</span></div>
+    <div class="nav-item" onclick="showView('prebooking',this)"><span class="ni">💳</span><span class="nl">Pre-Booking</span></div>
+    <div class="nav-item" onclick="showView('whatsapp',this)"><span class="ni">💬</span><span class="nl">WhatsApp</span></div>
+    <div class="nav-item" onclick="showView('compliance',this)"><span class="ni">🛡️</span><span class="nl">Compliance</span></div>
+    <div class="nav-item" onclick="showView('finance',this)"><span class="ni">📊</span><span class="nl">Financials</span></div>
+  </nav>
 
-// ─── Views ────────────────────────────────────────────────────────────────────
+  <div class="sidebar-footer">
+    <div class="status-dot"></div>
+    <span>All systems live</span>
+  </div>
+</div>
 
-const Dashboard = ({ setView, market }) => {
-  const M = MARKETS[market];
-  const paidToday = APPOINTMENTS.filter(a => a.paid).length;
-  const pendingDeposits = APPOINTMENTS.filter(a => !a.paid).length;
-  const todayRevenue = APPOINTMENTS.filter(a => a.paid).reduce((s, a) => s + a.deposit, 0);
-  const monthlyTarget = market === "NG" ? 1200000 : 85000;
-  const collected = market === "NG" ? 820000 : 58000;
+<!-- ═══ MAIN ══════════════════════════════════════════════════════════════ -->
+<div id="main">
 
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+  <!-- Topbar -->
+  <div id="topbar">
+    <div class="topbar-left">
+      <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+      <span class="page-title" id="page-title">Dashboard</span>
+    </div>
+    <div class="topbar-right">
+      <div class="market-pill" id="market-pill">🇳🇬 Nigeria · ₦</div>
+      <div class="notif">🔔<div class="notif-dot"></div></div>
+      <div class="user-pill">
+        <div class="avatar">AO</div>
+        <span class="user-name">Dr. Okonkwo</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div id="content">
+
+    <!-- ── DASHBOARD ── -->
+    <div class="view active" id="view-dashboard">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
         <div>
-          <div style={{ color: B.muted, fontSize: 13, marginBottom: 4 }}>
-            {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
-            <span style={{ marginLeft: 10 }}>{M.flag} {M.city}</span>
-          </div>
-          <h2 style={{ color: B.text, fontSize: 24, fontWeight: 900, margin: 0 }}>Good morning, Dr. Okonkwo 👋</h2>
-          <p style={{ color: B.muted, fontSize: 13, margin: "4px 0 0" }}>SmileCare Dental Clinic · {M.name}</p>
+          <div style="color:var(--muted);font-size:13px;margin-bottom:4px" id="dash-date">Monday, 9 March 2026 &nbsp;🇳🇬 Lagos</div>
+          <h2 style="font-family:'Syne',sans-serif;font-size:24px;font-weight:900">Good morning, Dr. Okonkwo 👋</h2>
+          <p style="color:var(--muted);font-size:13px;margin-top:4px">SmileCare Dental Clinic · <span id="dash-market">Nigeria</span></p>
         </div>
-        <Btn onClick={() => setView("prebooking")} gold>+ New Booking</Btn>
+        <button class="btn btn-gold" onclick="showView('prebooking',null)">+ New Booking</button>
       </div>
 
-      {/* KPIs */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
-        <KPI label="Today's Patients" value={APPOINTMENTS.length} sub={`${paidToday} confirmed`} accent icon="📅" />
-        <KPI label="Deposits Pending" value={pendingDeposits} sub="WhatsApp chase needed" icon="💬" />
-        <KPI label="Today's Revenue" value={fmt(todayRevenue, market)} sub="Deposits collected" icon="💰" gold />
-        <KPI label="Staff Jobs" value={`8/${JOBS.length}`} sub="Completed today" icon="✅" />
+      <div class="kpi-grid">
+        <div class="kpi accent">
+          <div class="kpi-top"><div><div class="kpi-label">Today's Patients</div><div class="kpi-value accent-val">7</div><div class="kpi-sub">5 confirmed</div></div><div class="kpi-icon">📅</div></div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-top"><div><div class="kpi-label">Deposits Pending</div><div class="kpi-value">2</div><div class="kpi-sub">WhatsApp chase needed</div></div><div class="kpi-icon">💬</div></div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-top"><div><div class="kpi-label">Today's Revenue</div><div class="kpi-value gold-val" id="dash-rev">₦43,000</div><div class="kpi-sub">Deposits collected</div></div><div class="kpi-icon">💰</div></div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-top"><div><div class="kpi-label">Staff Jobs</div><div class="kpi-value">8/20</div><div class="kpi-sub">Completed today</div></div><div class="kpi-icon">✅</div></div>
+        </div>
       </div>
 
-      {/* Monthly target */}
-      <Card glow>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 14 }}>
-          <div style={{ color: B.text, fontWeight: 700 }}>Monthly Revenue Target</div>
-          <Badge type="accent">March 2026</Badge>
+      <div class="card glow">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div class="card-title" style="margin:0">Monthly Revenue Target</div>
+          <span class="badge badge-accent">March 2026</span>
         </div>
-        <Bar value={collected} max={monthlyTarget} />
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10 }}>
-          <span style={{ color: B.accent, fontWeight: 800 }}>{fmt(collected, market)} collected</span>
-          <span style={{ color: B.muted, fontSize: 13 }}>Target: {fmt(monthlyTarget, market)}</span>
+        <div class="bar-wrap" style="height:8px"><div class="bar-fill" id="dash-bar" style="height:8px;width:68%"></div></div>
+        <div style="display:flex;justify-content:space-between;margin-top:10px">
+          <span style="color:var(--accent);font-weight:800" id="dash-collected">₦820,000 collected</span>
+          <span style="color:var(--muted);font-size:13px" id="dash-target">Target: ₦1,200,000</span>
         </div>
-        {/* Mini chart */}
-        <div style={{ marginTop: 20, display: "flex", gap: 8, alignItems: "flex-end", height: 70 }}>
-          {WEEKLY.map(d => {
-            const max = Math.max(...WEEKLY.map(x => x.rev));
-            const h = (d.rev / max) * 60;
-            return (
-              <div key={d.day} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
-                <div style={{ width: "100%", height: h, background: `linear-gradient(180deg, ${B.accent}, ${B.accentDark})`, borderRadius: "5px 5px 0 0" }} />
-                <span style={{ color: B.muted, fontSize: 11, fontWeight: 600 }}>{d.day}</span>
-              </div>
-            );
-          })}
-        </div>
-      </Card>
+        <div class="mini-chart" id="mini-chart"></div>
+      </div>
 
-      {/* Today's appointments */}
-      <Card>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-          <div style={{ color: B.text, fontWeight: 700 }}>Today's Schedule</div>
-          <span onClick={() => setView("appointments")} style={{ color: B.accent, fontSize: 13, cursor: "pointer", fontWeight: 600 }}>View all →</span>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div class="card-title" style="margin:0">Today's Schedule</div>
+          <span onclick="showView('appointments',null)" style="color:var(--accent);font-size:13px;cursor:pointer;font-weight:600">View all →</span>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {APPOINTMENTS.slice(0, 5).map(a => (
-            <div key={a.id} style={{
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "11px 14px", background: B.surface, borderRadius: 10,
-              borderLeft: `3px solid ${a.paid ? B.accent : B.warning}`,
-            }}>
-              <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                <span style={{ color: B.accent, fontWeight: 800, fontSize: 13, minWidth: 44 }}>{a.time}</span>
-                <div>
-                  <div style={{ color: B.text, fontWeight: 600, fontSize: 14 }}>{a.patient}</div>
-                  <div style={{ color: B.muted, fontSize: 12 }}>{a.type}</div>
-                </div>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ color: B.muted, fontSize: 12 }}>{fmt(a.deposit, market)}</span>
-                <Badge type={a.paid ? "success" : "warning"}>{a.paid ? "Paid" : "Pending"}</Badge>
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
+        <div id="dash-apts"></div>
+      </div>
 
-      {/* Quick actions */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10 }}>
-        {[
-          { label: "DentTrack", icon: "✅", view: "denttrack" },
-          { label: "Compliance", icon: "🛡️", view: "compliance" },
-          { label: "Financials", icon: "📊", view: "finance" },
-          { label: "WhatsApp", icon: "💬", view: "whatsapp" },
-        ].map(a => (
-          <Card key={a.view} onClick={() => setView(a.view)} style={{ padding: "16px", textAlign: "center" }}>
-            <div style={{ fontSize: 26, marginBottom: 8 }}>{a.icon}</div>
-            <div style={{ color: B.text, fontWeight: 700, fontSize: 13 }}>{a.label}</div>
-          </Card>
-        ))}
+      <div class="quick-grid">
+        <div class="quick-card" onclick="showView('denttrack',null)"><div class="quick-icon">✅</div><div class="quick-label">DentTrack</div></div>
+        <div class="quick-card" onclick="showView('compliance',null)"><div class="quick-icon">🛡️</div><div class="quick-label">Compliance</div></div>
+        <div class="quick-card" onclick="showView('finance',null)"><div class="quick-icon">📊</div><div class="quick-label">Financials</div></div>
+        <div class="quick-card" onclick="showView('whatsapp',null)"><div class="quick-icon">💬</div><div class="quick-label">WhatsApp</div></div>
       </div>
     </div>
-  );
-};
 
-const DentTrack = () => {
-  const [done, setDone] = useState(new Set(["j1", "j2", "j3", "j6", "j7", "j13", "j14", "j15"]));
-  const [taskText, setTaskText] = useState("");
-  const [assignTo, setAssignTo] = useState(null);
-  const [tasks, setTasks] = useState([
-    { id: "t1", text: "Order more gloves — stock critically low", to: 1, deadline: "12:00", done: false },
-    { id: "t2", text: "Call Blessing Nwosu re: unpaid deposit", to: 2, deadline: "09:30", done: false },
-  ]);
-
-  const toggle = id => setDone(p => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
-  const pct = Math.round((done.size / JOBS.length) * 100);
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <h2 style={{ color: B.text, fontSize: 22, fontWeight: 900, margin: 0 }}>DentTrack</h2>
-          <p style={{ color: B.muted, fontSize: 13, margin: "4px 0 0" }}>Staff accountability & daily checklists</p>
-        </div>
-        <div style={{ textAlign: "right" }}>
-          <div style={{ color: B.accent, fontSize: 34, fontWeight: 900, lineHeight: 1 }}>{pct}%</div>
-          <div style={{ color: B.muted, fontSize: 12 }}>{done.size}/{JOBS.length} complete</div>
+    <!-- ── DENTTRACK ── -->
+    <div class="view" id="view-denttrack">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+        <div class="page-header"><h2>DentTrack</h2><p>Staff accountability &amp; daily checklists</p></div>
+        <div style="text-align:right">
+          <div style="font-family:'Syne',sans-serif;font-size:34px;font-weight:900;color:var(--accent)" id="dt-pct">40%</div>
+          <div style="color:var(--muted);font-size:12px" id="dt-count">8/20 complete</div>
         </div>
       </div>
 
-      <Card glow>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-          <span style={{ color: B.text, fontWeight: 600 }}>Today's Progress</span>
-          <span style={{ color: done.size === JOBS.length ? B.success : B.accent, fontWeight: 700 }}>
-            {done.size === JOBS.length ? "✅ All done!" : `${JOBS.length - done.size} remaining`}
-          </span>
+      <div class="card glow">
+        <div class="progress-row">
+          <span class="progress-label">Today's Progress</span>
+          <span class="progress-status" id="dt-status" style="color:var(--accent)">12 remaining</span>
         </div>
-        <Bar value={done.size} max={JOBS.length} color={done.size === JOBS.length ? B.success : B.accent} height={8} />
-      </Card>
+        <div class="bar-wrap" style="height:8px"><div class="bar-fill" id="dt-bar" style="height:8px;width:40%"></div></div>
+      </div>
 
-      {/* Team */}
-      <Card>
-        <div style={{ color: B.text, fontWeight: 700, marginBottom: 14 }}>Team On Duty</div>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          {STAFF.map(s => (
-            <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 10, background: B.surface, padding: "10px 14px", borderRadius: 10 }}>
-              <div style={{ width: 34, height: 34, borderRadius: "50%", background: s.color, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 12 }}>{s.avatar}</div>
-              <div>
-                <div style={{ color: B.text, fontWeight: 600, fontSize: 13 }}>{s.name}</div>
-                <div style={{ color: B.muted, fontSize: 11 }}>{s.role}</div>
-              </div>
-              <div style={{ width: 8, height: 8, borderRadius: "50%", background: B.success, boxShadow: `0 0 6px ${B.success}` }} />
-            </div>
-          ))}
-        </div>
-      </Card>
+      <div class="card">
+        <div class="card-title">Team On Duty</div>
+        <div class="team-grid" id="team-grid"></div>
+      </div>
 
-      {/* Jobs by category */}
-      {CATEGORIES.map(cat => {
-        const catJobs = JOBS.filter(j => j.cat === cat);
-        const catDone = catJobs.filter(j => done.has(j.id)).length;
-        return (
-          <Card key={cat}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-              <span style={{ color: B.text, fontWeight: 700, fontSize: 15 }}>{cat}</span>
-              <Badge type={catDone === catJobs.length ? "success" : "default"}>{catDone}/{catJobs.length}</Badge>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {catJobs.map(job => {
-                const isDone = done.has(job.id);
-                return (
-                  <div key={job.id} onClick={() => toggle(job.id)} style={{
-                    display: "flex", alignItems: "center", gap: 12,
-                    padding: "11px 14px", borderRadius: 10, cursor: "pointer",
-                    background: isDone ? "#052E1C" : B.surface,
-                    border: `1px solid ${isDone ? "#065F46" : "transparent"}`,
-                    transition: "all 0.15s",
-                  }}>
-                    <div style={{
-                      width: 22, height: 22, borderRadius: 6, flexShrink: 0,
-                      border: `2px solid ${isDone ? B.success : B.border}`,
-                      background: isDone ? B.success : "transparent",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      transition: "all 0.15s",
-                    }}>{isDone && <span style={{ color: "#fff", fontSize: 12 }}>✓</span>}</div>
-                    <span style={{ flex: 1, color: isDone ? B.muted : B.text, fontSize: 14, textDecoration: isDone ? "line-through" : "none" }}>{job.text}</span>
-                    <Badge type="default">{job.role}</Badge>
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
-        );
-      })}
+      <div id="job-categories"></div>
 
-      {/* Task assign */}
-      <Card>
-        <div style={{ color: B.text, fontWeight: 700, marginBottom: 14 }}>Assign a Task</div>
-        <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
-          {STAFF.map(s => (
-            <div key={s.id} onClick={() => setAssignTo(s.id === assignTo ? null : s.id)} style={{
-              padding: "8px 14px", borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 13,
-              background: assignTo === s.id ? B.accent : B.surface,
-              color: assignTo === s.id ? "#fff" : B.text,
-              transition: "all 0.15s",
-            }}>{s.name.split(" ")[0]}</div>
-          ))}
+      <div class="card">
+        <div class="card-title">Assign a Task</div>
+        <div class="assign-btns" id="assign-btns"></div>
+        <div class="task-input-row">
+          <input class="form-input" id="task-input" placeholder="Describe the task..." onkeydown="if(event.key==='Enter')addTask()"/>
+          <button class="btn btn-primary" onclick="addTask()">Assign</button>
         </div>
-        <div style={{ display: "flex", gap: 10 }}>
-          <input value={taskText} onChange={e => setTaskText(e.target.value)} onKeyDown={e => e.key === "Enter" && taskText.trim() && assignTo && (setTasks(p => [...p, { id: `t${Date.now()}`, text: taskText, to: assignTo, deadline: "17:00", done: false }]), setTaskText(""), setAssignTo(null))} placeholder="Describe the task..." style={{ flex: 1, background: B.surface, border: `1px solid ${B.border}`, borderRadius: 10, padding: "11px 14px", color: B.text, fontSize: 14, outline: "none", fontFamily: "inherit" }} />
-          <Btn onClick={() => { if (taskText.trim() && assignTo) { setTasks(p => [...p, { id: `t${Date.now()}`, text: taskText, to: assignTo, deadline: "17:00", done: false }]); setTaskText(""); setAssignTo(null); } }}>Assign</Btn>
-        </div>
-        {tasks.length > 0 && (
-          <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 8 }}>
-            {tasks.map(t => {
-              const s = STAFF.find(x => x.id === t.to);
-              return (
-                <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 14px", background: B.surface, borderRadius: 10 }}>
-                  <div onClick={() => setTasks(p => p.map(x => x.id === t.id ? { ...x, done: !x.done } : x))} style={{ width: 20, height: 20, borderRadius: 5, border: `2px solid ${t.done ? B.success : B.border}`, background: t.done ? B.success : "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    {t.done && <span style={{ color: "#fff", fontSize: 11 }}>✓</span>}
-                  </div>
-                  <span style={{ flex: 1, color: t.done ? B.muted : B.text, fontSize: 14, textDecoration: t.done ? "line-through" : "none" }}>{t.text}</span>
-                  {s && <div style={{ width: 26, height: 26, borderRadius: "50%", background: s.color, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 10, fontWeight: 800 }}>{s.avatar}</div>}
-                  <span style={{ color: B.muted, fontSize: 12 }}>{t.deadline}</span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </Card>
+        <div id="task-list" style="margin-top:12px;display:flex;flex-direction:column;gap:8px"></div>
+      </div>
     </div>
-  );
-};
 
-const Appointments = ({ market }) => (
-  <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-    <h2 style={{ color: B.text, fontSize: 22, fontWeight: 900, margin: 0 }}>Appointments</h2>
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12 }}>
-      <KPI label="Total Today" value={APPOINTMENTS.length} icon="📅" />
-      <KPI label="Confirmed" value={APPOINTMENTS.filter(a => a.paid).length} accent icon="✅" />
-      <KPI label="Deposits Pending" value={APPOINTMENTS.filter(a => !a.paid).length} icon="⚠️" />
+    <!-- ── APPOINTMENTS ── -->
+    <div class="view" id="view-appointments">
+      <div class="page-header"><h2>Appointments</h2><p>Today's patient schedule</p></div>
+      <div class="kpi-grid kpi-3">
+        <div class="kpi"><div class="kpi-top"><div><div class="kpi-label">Total Today</div><div class="kpi-value">7</div></div><div class="kpi-icon">📅</div></div></div>
+        <div class="kpi accent"><div class="kpi-top"><div><div class="kpi-label">Confirmed</div><div class="kpi-value accent-val">5</div></div><div class="kpi-icon">✅</div></div></div>
+        <div class="kpi"><div class="kpi-top"><div><div class="kpi-label">Pending Deposits</div><div class="kpi-value">2</div></div><div class="kpi-icon">⚠️</div></div></div>
+      </div>
+      <div class="card"><div id="apt-list"></div></div>
     </div>
-    <Card>
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {APPOINTMENTS.map(a => (
-          <div key={a.id} style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "14px 16px", background: B.surface, borderRadius: 12,
-            borderLeft: `4px solid ${a.paid ? B.accent : B.warning}`,
-          }}>
-            <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-              <span style={{ color: B.accent, fontWeight: 800, minWidth: 46 }}>{a.time}</span>
-              <div>
-                <div style={{ color: B.text, fontWeight: 700 }}>{a.patient}</div>
-                <div style={{ color: B.muted, fontSize: 12 }}>{a.type} · {a.phone}</div>
-              </div>
-            </div>
-            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-              <span style={{ color: B.muted, fontSize: 13 }}>{fmt(a.deposit, market)}</span>
-              <Badge type={a.paid ? "success" : "warning"}>{a.paid ? "Paid" : "Pending"}</Badge>
-            </div>
-          </div>
-        ))}
-      </div>
-    </Card>
-  </div>
-);
 
-const PreBooking = ({ market }) => {
-  const M = MARKETS[market];
-  const [form, setForm] = useState({ name: "", phone: "", email: "", date: "", time: "", type: "", deposit: "5000" });
-  const [sent, setSent] = useState(false);
-  const treatments = [
-    { label: "Examination", deposit: market === "NG" ? "5000" : "800" },
-    { label: "Scale & Polish", deposit: market === "NG" ? "3000" : "500" },
-    { label: "Composite Filling", deposit: market === "NG" ? "8000" : "1200" },
-    { label: "Teeth Whitening", deposit: market === "NG" ? "15000" : "2500" },
-    { label: "Crown Fitting", deposit: market === "NG" ? "20000" : "3500" },
-    { label: "Extraction", deposit: market === "NG" ? "6000" : "1000" },
-  ];
-
-  if (sent) return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <Card style={{ textAlign: "center", padding: 48 }} glow>
-        <div style={{ fontSize: 52, marginBottom: 16 }}>✅</div>
-        <h3 style={{ color: B.accent, fontSize: 20, fontWeight: 800, margin: "0 0 12px" }}>Booking Request Sent!</h3>
-        <div style={{ background: B.surface, borderRadius: 12, padding: 16, margin: "16px 0", textAlign: "left" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-            <span style={{ fontSize: 20 }}>💬</span>
-            <span style={{ color: B.text, fontWeight: 600 }}>WhatsApp sent to {form.phone}</span>
-          </div>
-          <div style={{ color: B.muted, fontSize: 13, lineHeight: 1.6, fontStyle: "italic" }}>
-            "Hi {form.name}, your appointment at SmileCare Dental on {form.date} at {form.time} is reserved. Please pay your deposit of {M.currency}{form.deposit} to confirm: [payment link] — SmileCare Dental"
-          </div>
-        </div>
-        <div style={{ background: B.surface, borderRadius: 12, padding: 16, textAlign: "left", marginBottom: 20 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-            <span style={{ fontSize: 20 }}>📧</span>
-            <span style={{ color: B.text, fontWeight: 600 }}>Email sent to {form.email || "patient"}</span>
-          </div>
-          <div style={{ color: B.muted, fontSize: 13 }}>Booking confirmation with Stripe payment link attached</div>
-        </div>
-        <div style={{ color: B.muted, fontSize: 13, marginBottom: 20 }}>
-          Routed via <span style={{ color: B.accent, fontWeight: 600 }}>n8n automation</span> — translation, WhatsApp, email and logging handled automatically
-        </div>
-        <Btn full onClick={() => { setSent(false); setForm({ name: "", phone: "", email: "", date: "", time: "", type: "", deposit: treatments[0].deposit }); }}>New Booking</Btn>
-      </Card>
-    </div>
-  );
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <div>
-        <h2 style={{ color: B.text, fontSize: 22, fontWeight: 900, margin: 0 }}>Pre-Booking & Deposit</h2>
-        <p style={{ color: B.muted, fontSize: 13, margin: "4px 0 0" }}>Automated via n8n · WhatsApp + Email + Stripe</p>
+    <!-- ── PRE-BOOKING ── -->
+    <div class="view" id="view-prebooking">
+      <div class="page-header"><h2>Pre-Booking &amp; Deposit</h2><p>Automated via n8n · WhatsApp + Email + Stripe</p></div>
+      <div class="kpi-grid kpi-2">
+        <div class="kpi accent"><div class="kpi-top"><div><div class="kpi-label">Confirmed Today</div><div class="kpi-value accent-val">5</div></div><div class="kpi-icon">✅</div></div></div>
+        <div class="kpi"><div class="kpi-top"><div><div class="kpi-label">Pending Deposits</div><div class="kpi-value">2</div></div><div class="kpi-icon">⏳</div></div></div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        <KPI label="Confirmed Today" value={APPOINTMENTS.filter(a => a.paid).length} accent icon="✅" />
-        <KPI label="Pending Deposits" value={APPOINTMENTS.filter(a => !a.paid).length} icon="⏳" />
-      </div>
-      <Card>
-        <div style={{ color: B.text, fontWeight: 700, fontSize: 15, marginBottom: 18 }}>New Booking Request</div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-          <Input label="Patient Name" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Full name" />
-          <Input label={`WhatsApp (${M.whatsapp})`} value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} placeholder={M.whatsapp + " 800 000 0000"} />
-          <Input label="Email Address" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} placeholder="patient@email.com" />
-          <Input label="Appointment Date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} type="date" />
-          <Input label="Appointment Time" value={form.time} onChange={e => setForm(p => ({ ...p, time: e.target.value }))} type="time" />
-          <div>
-            <label style={{ color: B.muted, fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>Treatment Type</label>
-            <select value={form.type} onChange={e => { const t = treatments.find(x => x.label === e.target.value); setForm(p => ({ ...p, type: e.target.value, deposit: t ? t.deposit : p.deposit })); }} style={{ width: "100%", background: B.surface, border: `1px solid ${B.border}`, borderRadius: 10, padding: "11px 14px", color: form.type ? B.text : B.muted, fontSize: 14, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }}>
+
+      <div class="card" id="booking-form-card">
+        <div class="card-title">New Booking Request</div>
+        <div class="form-grid">
+          <div class="form-field"><label class="form-label">Patient Name</label><input class="form-input" id="pb-name" placeholder="Full name"/></div>
+          <div class="form-field"><label class="form-label" id="pb-phone-label">WhatsApp (+234)</label><input class="form-input" id="pb-phone" placeholder="+234 800 000 0000"/></div>
+          <div class="form-field"><label class="form-label">Email Address</label><input class="form-input" id="pb-email" placeholder="patient@email.com" type="email"/></div>
+          <div class="form-field"><label class="form-label">Appointment Date</label><input class="form-input" id="pb-date" type="date"/></div>
+          <div class="form-field"><label class="form-label">Appointment Time</label><input class="form-input" id="pb-time" type="time"/></div>
+          <div class="form-field">
+            <label class="form-label">Treatment Type</label>
+            <select class="form-select" id="pb-type" onchange="updateDeposit()">
               <option value="">Select treatment</option>
-              {treatments.map(t => <option key={t.label} value={t.label}>{t.label}</option>)}
+              <option value="5000|800">Examination</option>
+              <option value="3000|500">Scale &amp; Polish</option>
+              <option value="8000|1200">Composite Filling</option>
+              <option value="15000|2500">Teeth Whitening</option>
+              <option value="20000|3500">Crown Fitting</option>
+              <option value="6000|1000">Extraction</option>
             </select>
           </div>
         </div>
-
-        <div style={{ marginTop: 16, padding: "14px 18px", background: B.surface, borderRadius: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div class="deposit-box">
           <div>
-            <div style={{ color: B.muted, fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>Deposit Amount</div>
-            <div style={{ color: B.gold, fontSize: 28, fontWeight: 900 }}>{M.currency}{parseInt(form.deposit || 0).toLocaleString()}</div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Deposit Amount</div>
+            <div class="deposit-amount" id="pb-deposit-display">₦0</div>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, color: B.muted, fontSize: 13 }}><span>💬</span> WhatsApp via n8n</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, color: B.muted, fontSize: 13 }}><span>📧</span> Email via Gmail</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, color: B.muted, fontSize: 13 }}><span>💳</span> Stripe payment link</div>
-          </div>
-        </div>
-
-        <div style={{ marginTop: 14 }}>
-          <Btn full onClick={() => form.name && form.phone && setSent(true)}>Send Booking & Deposit Request →</Btn>
-        </div>
-      </Card>
-    </div>
-  );
-};
-
-const WhatsApp = ({ market }) => {
-  const M = MARKETS[market];
-  const [sent, setSent] = useState(new Set());
-  const pending = APPOINTMENTS.filter(a => !a.paid);
-
-  const templates = [
-    { id: "deposit", label: "Deposit Reminder", icon: "💳", msg: (p) => `Hi ${p.patient.split(" ")[0]}, this is a reminder to pay your deposit of ${M.currency}${p.deposit.toLocaleString()} to confirm your appointment at SmileCare Dental on ${p.time} today. Pay here: [link]` },
-    { id: "confirm", label: "Appointment Confirmation", icon: "✅", msg: (p) => `Hi ${p.patient.split(" ")[0]}, your appointment at SmileCare Dental today at ${p.time} is confirmed. Please arrive 5 minutes early. See you soon! 😊` },
-    { id: "reminder", label: "24hr Reminder", icon: "⏰", msg: (p) => `Hi ${p.patient.split(" ")[0]}, just a reminder you have an appointment at SmileCare Dental tomorrow. Reply YES to confirm or call us to reschedule.` },
-  ];
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <div>
-        <h2 style={{ color: B.text, fontSize: 22, fontWeight: 900, margin: 0 }}>WhatsApp Automation</h2>
-        <p style={{ color: B.muted, fontSize: 13, margin: "4px 0 0" }}>Powered by n8n · WhatsApp Business API</p>
-      </div>
-
-      {/* n8n info */}
-      <Card glow>
-        <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-          <div style={{ fontSize: 36 }}>🔄</div>
-          <div>
-            <div style={{ color: B.accent, fontWeight: 800, fontSize: 15 }}>n8n Translation & Automation Layer</div>
-            <div style={{ color: B.muted, fontSize: 13, marginTop: 4 }}>All messages route through n8n for automatic translation (English → French → Hausa → Swahili), logging to Google Sheets, and WhatsApp delivery via WhatsApp Business API. No manual sending required.</div>
+          <div class="deposit-channels">
+            <div class="channel-line"><span>💬</span> WhatsApp via n8n</div>
+            <div class="channel-line"><span>📧</span> Email via Gmail</div>
+            <div class="channel-line"><span>💳</span> Stripe payment link</div>
           </div>
         </div>
-      </Card>
-
-      {/* Message templates */}
-      <Card>
-        <div style={{ color: B.text, fontWeight: 700, marginBottom: 14 }}>Message Templates</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {templates.map(t => (
-            <div key={t.id} style={{ padding: "14px 16px", background: B.surface, borderRadius: 12, border: `1px solid ${B.border}` }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <span>{t.icon}</span>
-                  <span style={{ color: B.text, fontWeight: 700 }}>{t.label}</span>
-                </div>
-                <Badge type="accent">n8n automated</Badge>
-              </div>
-              <div style={{ color: B.muted, fontSize: 13, fontStyle: "italic", lineHeight: 1.5 }}>"{t.msg(APPOINTMENTS[0])}"</div>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Chase pending deposits */}
-      <Card>
-        <div style={{ color: B.text, fontWeight: 700, marginBottom: 14 }}>Chase Pending Deposits ({pending.length})</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {pending.map(a => (
-            <div key={a.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", background: B.surface, borderRadius: 10 }}>
-              <div>
-                <div style={{ color: B.text, fontWeight: 600 }}>{a.patient}</div>
-                <div style={{ color: B.muted, fontSize: 12 }}>{a.time} · {a.phone} · {M.currency}{a.deposit.toLocaleString()}</div>
-              </div>
-              <Btn small variant={sent.has(a.id) ? "ghost" : "gold"} onClick={() => setSent(p => new Set([...p, a.id]))}>
-                {sent.has(a.id) ? "✓ Sent" : "💬 Chase"}
-              </Btn>
-            </div>
-          ))}
-        </div>
-      </Card>
-    </div>
-  );
-};
-
-const Compliance = () => {
-  const overdue = COMPLIANCE.filter(c => c.status === "overdue").length;
-  const review = COMPLIANCE.filter(c => c.status === "review").length;
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <h2 style={{ color: B.text, fontSize: 22, fontWeight: 900, margin: 0 }}>Compliance Tracker</h2>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12 }}>
-        <KPI label="Compliant" value={COMPLIANCE.filter(c => c.status === "compliant").length} accent icon="🛡️" />
-        <KPI label="Due Review" value={review} icon="⚠️" />
-        <KPI label="Overdue" value={overdue} icon="🚨" />
+        <button class="btn btn-primary btn-full" onclick="submitBooking()">Send Booking &amp; Deposit Request →</button>
       </div>
-      <Card>
-        {COMPLIANCE.map(c => {
-          const m = { compliant: { type: "success", icon: "✅" }, review: { type: "warning", icon: "⏰" }, overdue: { type: "danger", icon: "🚨" } };
-          return (
-            <div key={c.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 14px", background: B.surface, borderRadius: 10, marginBottom: 8 }}>
-              <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                <span>{m[c.status].icon}</span>
-                <div>
-                  <div style={{ color: B.text, fontWeight: 600 }}>{c.item}</div>
-                  <div style={{ color: B.muted, fontSize: 12 }}>{c.cat} · Expires {c.expiry}</div>
-                </div>
-              </div>
-              <Badge type={m[c.status].type}>{c.status}</Badge>
-            </div>
-          );
-        })}
-      </Card>
-    </div>
-  );
-};
 
-const Finance = ({ market }) => {
-  const M = MARKETS[market];
-  const target = market === "NG" ? 1200000 : 85000;
-  const collected = market === "NG" ? 820000 : 58000;
-  const deposits = market === "NG" ? 234000 : 16500;
-  const noshow = market === "NG" ? 48000 : 3400;
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <h2 style={{ color: B.text, fontSize: 22, fontWeight: 900, margin: 0 }}>Financial Dashboard</h2>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 12 }}>
-        <KPI label="Collected" value={fmt(collected, market)} sub={`${Math.round(collected / target * 100)}% of target`} accent icon="💰" />
-        <KPI label="Monthly Target" value={fmt(target, market)} icon="🎯" />
-        <KPI label="Deposits Held" value={fmt(deposits, market)} icon="💳" gold />
-        <KPI label="No-Show Cost" value={fmt(noshow, market)} icon="😤" />
+      <div class="card" id="booking-success" style="display:none">
+        <div class="success-state">
+          <div class="success-icon">✅</div>
+          <div class="success-title">Booking Request Sent!</div>
+          <div class="message-preview">
+            <div class="message-header"><span style="font-size:20px">💬</span> WhatsApp sent</div>
+            <div class="message-body" id="pb-wa-preview"></div>
+          </div>
+          <div class="message-preview">
+            <div class="message-header"><span style="font-size:20px">📧</span> Email sent</div>
+            <div class="message-body">Booking confirmation with Stripe payment link attached.</div>
+          </div>
+          <div style="color:var(--muted);font-size:13px;margin:16px 0">Routed via <span style="color:var(--accent);font-weight:600">n8n automation</span> — translation, WhatsApp, email and logging handled automatically.</div>
+          <button class="btn btn-primary" onclick="resetBooking()">New Booking</button>
+        </div>
       </div>
-      <Card glow>
-        <div style={{ color: B.text, fontWeight: 700, marginBottom: 12 }}>Monthly Revenue Progress</div>
-        <Bar value={collected} max={target} height={10} />
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10 }}>
-          <span style={{ color: B.accent, fontWeight: 800 }}>{fmt(collected, market)}</span>
-          <span style={{ color: B.muted, fontSize: 13 }}>{fmt(target - collected, market)} remaining</span>
-        </div>
-      </Card>
-      <Card>
-        <div style={{ color: B.text, fontWeight: 700, marginBottom: 16 }}>Weekly Revenue</div>
-        <div style={{ display: "flex", gap: 8, alignItems: "flex-end", height: 100 }}>
-          {WEEKLY.map(d => {
-            const max = Math.max(...WEEKLY.map(x => x.rev));
-            const mult = market === "KE" ? 0.071 : 1;
-            const h = (d.rev / max) * 84;
-            return (
-              <div key={d.day} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-                <span style={{ color: B.muted, fontSize: 10 }}>{M.currency}{Math.round(d.rev * mult / 1000)}k</span>
-                <div style={{ width: "100%", height: h, background: `linear-gradient(180deg, ${B.accent}, ${B.accentDark})`, borderRadius: "5px 5px 0 0" }} />
-                <span style={{ color: B.muted, fontSize: 11, fontWeight: 600 }}>{d.day}</span>
-              </div>
-            );
-          })}
-        </div>
-      </Card>
     </div>
-  );
+
+    <!-- ── WHATSAPP ── -->
+    <div class="view" id="view-whatsapp">
+      <div class="page-header"><h2>WhatsApp Automation</h2><p>Powered by n8n · WhatsApp Business API</p></div>
+
+      <div class="n8n-banner">
+        <div class="n8n-icon">🔄</div>
+        <div>
+          <div class="n8n-title">n8n Translation &amp; Automation Layer</div>
+          <div class="n8n-desc">All messages route through n8n for automatic translation (English → French, Hausa, Swahili, Yoruba), logging to Google Sheets, and delivery via WhatsApp Business API. No manual sending required.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Message Templates</div>
+        <div class="wa-template">
+          <div class="wa-header"><div class="wa-title"><span>💳</span> Deposit Reminder</div><span class="badge badge-accent">n8n automated</span></div>
+          <div class="wa-msg">"Hi Kemi, this is a reminder to pay your deposit of ₦5,000 to confirm your appointment at SmileCare Dental today at 08:30. Pay here: [payment link]"</div>
+        </div>
+        <div class="wa-template" style="margin-top:8px">
+          <div class="wa-header"><div class="wa-title"><span>✅</span> Appointment Confirmation</div><span class="badge badge-accent">n8n automated</span></div>
+          <div class="wa-msg">"Hi Chukwuemeka, your appointment at SmileCare Dental today at 09:15 is confirmed. Please arrive 5 minutes early. See you soon! 😊"</div>
+        </div>
+        <div class="wa-template" style="margin-top:8px">
+          <div class="wa-header"><div class="wa-title"><span>⏰</span> 24hr Reminder</div><span class="badge badge-accent">n8n automated</span></div>
+          <div class="wa-msg">"Hi Blessing, just a reminder you have an appointment at SmileCare Dental tomorrow. Reply YES to confirm or call us to reschedule."</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Chase Pending Deposits (2)</div>
+        <div id="wa-pending"></div>
+      </div>
+    </div>
+
+    <!-- ── COMPLIANCE ── -->
+    <div class="view" id="view-compliance">
+      <div class="page-header"><h2>Compliance Tracker</h2><p>Regulatory obligations &amp; expiry monitoring</p></div>
+      <div class="kpi-grid kpi-3">
+        <div class="kpi accent"><div class="kpi-top"><div><div class="kpi-label">Compliant</div><div class="kpi-value accent-val">4</div></div><div class="kpi-icon">🛡️</div></div></div>
+        <div class="kpi"><div class="kpi-top"><div><div class="kpi-label">Due Review</div><div class="kpi-value">2</div></div><div class="kpi-icon">⚠️</div></div></div>
+        <div class="kpi"><div class="kpi-top"><div><div class="kpi-label">Overdue</div><div class="kpi-value" style="color:var(--danger)">1</div></div><div class="kpi-icon">🚨</div></div></div>
+      </div>
+      <div class="card" id="compliance-list"></div>
+    </div>
+
+    <!-- ── FINANCE ── -->
+    <div class="view" id="view-finance">
+      <div class="page-header"><h2>Financial Dashboard</h2><p>Cash flow, revenue &amp; deposit tracking</p></div>
+      <div class="kpi-grid kpi-2">
+        <div class="kpi accent"><div class="kpi-top"><div><div class="kpi-label">Collected</div><div class="kpi-value accent-val" id="fin-collected">₦820,000</div><div class="kpi-sub" id="fin-pct">68% of target</div></div><div class="kpi-icon">💰</div></div></div>
+        <div class="kpi"><div class="kpi-top"><div><div class="kpi-label">Monthly Target</div><div class="kpi-value" id="fin-target">₦1,200,000</div></div><div class="kpi-icon">🎯</div></div></div>
+        <div class="kpi"><div class="kpi-top"><div><div class="kpi-label">Deposits Held</div><div class="kpi-value gold-val" id="fin-deposits">₦234,000</div></div><div class="kpi-icon">💳</div></div></div>
+        <div class="kpi"><div class="kpi-top"><div><div class="kpi-label">No-Show Cost</div><div class="kpi-value" id="fin-noshow">₦48,000</div></div><div class="kpi-icon">😤</div></div></div>
+      </div>
+      <div class="card glow">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div class="card-title" style="margin:0">Monthly Progress</div>
+        </div>
+        <div class="bar-wrap" style="height:10px"><div class="bar-fill" id="fin-bar" style="height:10px;width:68%"></div></div>
+        <div style="display:flex;justify-content:space-between;margin-top:10px">
+          <span style="color:var(--accent);font-weight:800" id="fin-left-label">₦820,000</span>
+          <span style="color:var(--muted);font-size:13px" id="fin-remaining">₦380,000 remaining</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Weekly Revenue</div>
+        <div class="mini-chart" id="fin-chart"></div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<script>
+// ═══ DATA ═══════════════════════════════════════════════════════════════════
+
+const MARKETS = {
+  NG: { flag:'🇳🇬', name:'Nigeria', city:'Lagos', sym:'₦', phone:'+234', target:1200000, collected:820000, deposits:234000, noshow:48000, rev:[0,42000,68000,35000,81000,54000,29000] },
+  KE: { flag:'🇰🇪', name:'Kenya',   city:'Nairobi', sym:'KSh', phone:'+254', target:85000, collected:58000, deposits:16500, noshow:3400, rev:[0,2950,4830,2480,5740,3820,2060] },
 };
 
-// ─── Nav ──────────────────────────────────────────────────────────────────────
-const NAV = [
-  { id: "dashboard", label: "Dashboard", icon: "🏠" },
-  { id: "denttrack", label: "DentTrack", icon: "✅" },
-  { id: "appointments", label: "Appointments", icon: "📅" },
-  { id: "prebooking", label: "Pre-Booking", icon: "💳" },
-  { id: "whatsapp", label: "WhatsApp", icon: "💬" },
-  { id: "compliance", label: "Compliance", icon: "🛡️" },
-  { id: "finance", label: "Financials", icon: "📊" },
+const APTS = [
+  { time:'08:30', patient:'Kemi Adeyemi',       type:'Examination',     depNG:5000,  depKE:800,  paid:true },
+  { time:'09:15', patient:'Chukwuemeka Obi',    type:'Scale & Polish',  depNG:3000,  depKE:500,  paid:true },
+  { time:'10:00', patient:'Blessing Nwosu',     type:'Composite Filling',depNG:8000,  depKE:1200, paid:false},
+  { time:'11:00', patient:'Taiwo Afolabi',      type:'Teeth Whitening', depNG:15000, depKE:2500, paid:true },
+  { time:'12:00', patient:'Grace Mensah',       type:'Crown Fitting',   depNG:20000, depKE:3500, paid:true },
+  { time:'14:00', patient:'Olumide Bakare',     type:'Extraction',      depNG:6000,  depKE:1000, paid:false},
+  { time:'15:30', patient:'Ngozi Okonkwo',      type:'New Patient Exam',depNG:5000,  depKE:800,  paid:true },
 ];
 
-// ─── App ──────────────────────────────────────────────────────────────────────
-export default function App() {
-  const [view, setView] = useState("dashboard");
-  const [market, setMarket] = useState("NG");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const M = MARKETS[market];
+const JOBS_DATA = [
+  { id:'j1',  cat:'🔓 Opening Protocol',    text:'Key secured, alarm deactivated',                role:'Nurse' },
+  { id:'j2',  cat:'🔓 Opening Protocol',    text:'Generator checked and fuelled',                  role:'Nurse' },
+  { id:'j3',  cat:'🔓 Opening Protocol',    text:'Reception area cleaned and ready',               role:'Receptionist' },
+  { id:'j4',  cat:'🔓 Opening Protocol',    text:'Appointment diary reviewed',                     role:'Receptionist' },
+  { id:'j5',  cat:'🔓 Opening Protocol',    text:'Treatment trays set per diary',                  role:'Nurse' },
+  { id:'j6',  cat:'🦺 PPE & Infection',     text:'PPE protocol followed — mask, gloves, apron',    role:'Nurse' },
+  { id:'j7',  cat:'🦺 PPE & Infection',     text:'Dental chair water bottle disinfected',           role:'Nurse' },
+  { id:'j8',  cat:'🦺 PPE & Infection',     text:'Autoclave cycle run and validated',               role:'Nurse' },
+  { id:'j9',  cat:'🦺 PPE & Infection',     text:'All surfaces decontaminated',                    role:'Nurse' },
+  { id:'j10', cat:'🧪 Materials & Equipment',text:'Stock levels checked and logged',               role:'Nurse' },
+  { id:'j11', cat:'🧪 Materials & Equipment',text:'Compressor and suction checked',                role:'Nurse' },
+  { id:'j12', cat:'🧪 Materials & Equipment',text:'Emergency kit — contents and expiry checked',   role:'Nurse' },
+  { id:'j13', cat:'🤝 Patient Experience',  text:'Waiting area refreshed and stocked',             role:'Receptionist' },
+  { id:'j14', cat:'🤝 Patient Experience',  text:'WhatsApp confirmations sent to today\'s patients',role:'Receptionist' },
+  { id:'j15', cat:'🤝 Patient Experience',  text:'Deposit status confirmed for all bookings',       role:'Receptionist' },
+  { id:'j16', cat:'🔒 Closing Protocol',    text:'All clinical areas decontaminated',              role:'Nurse' },
+  { id:'j17', cat:'🔒 Closing Protocol',    text:'Autoclave final cycle logged',                   role:'Nurse' },
+  { id:'j18', cat:'🔒 Closing Protocol',    text:'Cash reconciled and secured',                    role:'Receptionist' },
+  { id:'j19', cat:'🔒 Closing Protocol',    text:'Generator switched off',                        role:'Nurse' },
+  { id:'j20', cat:'🔒 Closing Protocol',    text:'Premises locked and alarm set',                  role:'Receptionist' },
+];
 
-  const views = {
-    dashboard: <Dashboard setView={setView} market={market} />,
-    denttrack: <DentTrack />,
-    appointments: <Appointments market={market} />,
-    prebooking: <PreBooking market={market} />,
-    whatsapp: <WhatsApp market={market} />,
-    compliance: <Compliance />,
-    finance: <Finance market={market} />,
-  };
+const STAFF = [
+  { id:1, name:'Chioma Eze',       role:'Dental Nurse',    av:'CE', color:'#6366F1' },
+  { id:2, name:'Emeka Adeyemi',    role:'Receptionist',    av:'EA', color:'#EC4899' },
+  { id:3, name:'Fatima Bello',     role:'Dental Nurse',    av:'FB', color:'#F59E0B' },
+  { id:4, name:'Dr. Amara Okonkwo',role:'Principal Dentist',av:'AO', color:'#00D4A8' },
+];
 
-  return (
-    <div style={{ display: "flex", minHeight: "100vh", background: B.bg, fontFamily: "'DM Sans', 'Segoe UI', sans-serif", color: B.text }}>
+const COMPLIANCE_DATA = [
+  { item:'MDCN Registration',           status:'compliant', expiry:'2026-06-30', cat:'Registration' },
+  { item:'Infection Control Audit',     status:'compliant', expiry:'2025-12-01', cat:'Clinical' },
+  { item:'Fire Safety Certificate',     status:'review',    expiry:'2025-11-15', cat:'Safety' },
+  { item:'Staff BVN Verification',      status:'compliant', expiry:'2026-01-01', cat:'HR' },
+  { item:'Waste Disposal Contract',     status:'overdue',   expiry:'2025-09-01', cat:'Environmental' },
+  { item:'Autoclave Validation Log',    status:'compliant', expiry:'2026-03-01', cat:'Equipment' },
+  { item:'CPR Training — All Staff',    status:'review',    expiry:'2025-10-30', cat:'Training' },
+];
 
-      {/* Sidebar */}
-      <div style={{ width: sidebarOpen ? 232 : 0, flexShrink: 0, background: B.surface, borderRight: `1px solid ${B.border}`, display: "flex", flexDirection: "column", overflow: "hidden", transition: "width 0.3s ease" }}>
-        {/* Logo */}
-        <div style={{ padding: "22px 18px 16px", borderBottom: `1px solid ${B.border}` }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: `linear-gradient(135deg, ${B.accent}, #0096FF)`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 18, color: "#fff" }}>D</div>
-            <div>
-              <div style={{ fontWeight: 900, fontSize: 16, color: B.text, lineHeight: 1 }}>Dentiq</div>
-              <div style={{ fontSize: 10, color: B.muted, letterSpacing: "0.08em" }}>by Mythros</div>
-            </div>
-          </div>
-          {/* Practice card */}
-          <div style={{ background: B.bg, borderRadius: 10, padding: "10px 12px" }}>
-            <div style={{ color: B.text, fontWeight: 700, fontSize: 12 }}>{PRACTICE.name}</div>
-            <div style={{ color: B.muted, fontSize: 11, marginTop: 2 }}>{PRACTICE.owner}</div>
-            <div style={{ marginTop: 6 }}><Badge type="accent">{PRACTICE.plan}</Badge></div>
-          </div>
-        </div>
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat'];
 
-        {/* Market switcher */}
-        <div style={{ padding: "12px 18px", borderBottom: `1px solid ${B.border}` }}>
-          <div style={{ color: B.muted, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>Market</div>
-          <div style={{ display: "flex", gap: 6 }}>
-            {Object.entries(MARKETS).map(([k, v]) => (
-              <div key={k} onClick={() => setMarket(k)} style={{
-                flex: 1, padding: "7px", borderRadius: 8, cursor: "pointer", textAlign: "center",
-                background: market === k ? B.accentGlow : B.bg,
-                border: `1px solid ${market === k ? B.accent + "66" : B.border}`,
-                transition: "all 0.15s",
-              }}>
-                <div style={{ fontSize: 16 }}>{v.flag}</div>
-                <div style={{ color: market === k ? B.accent : B.muted, fontSize: 10, fontWeight: 700, marginTop: 2 }}>{v.name}</div>
-              </div>
-            ))}
-          </div>
-        </div>
+// ═══ STATE ══════════════════════════════════════════════════════════════════
 
-        {/* Nav */}
-        <nav style={{ flex: 1, padding: "12px 10px", display: "flex", flexDirection: "column", gap: 2 }}>
-          {NAV.map(item => (
-            <div key={item.id} onClick={() => setView(item.id)} style={{
-              display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
-              borderRadius: 10, cursor: "pointer",
-              background: view === item.id ? B.accentGlow : "transparent",
-              borderLeft: `3px solid ${view === item.id ? B.accent : "transparent"}`,
-              transition: "all 0.15s",
-            }}
-              onMouseEnter={e => { if (view !== item.id) e.currentTarget.style.background = B.bg; }}
-              onMouseLeave={e => { if (view !== item.id) e.currentTarget.style.background = "transparent"; }}
-            >
-              <span style={{ fontSize: 16 }}>{item.icon}</span>
-              <span style={{ color: view === item.id ? B.accent : B.text, fontWeight: view === item.id ? 700 : 400, fontSize: 14 }}>{item.label}</span>
-            </div>
-          ))}
-        </nav>
+let market    = 'NG';
+let completed = new Set(['j1','j2','j3','j6','j7','j13','j14','j15']);
+let tasks     = [
+  { id:'t1', text:'Order more gloves — stock critically low', to:1, deadline:'12:00', done:false },
+  { id:'t2', text:'Call Blessing Nwosu re: unpaid deposit',   to:2, deadline:'09:30', done:false },
+];
+let selectedStaff = null;
+let waSent = new Set();
 
-        <div style={{ padding: "14px 18px", borderTop: `1px solid ${B.border}` }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ width: 8, height: 8, borderRadius: "50%", background: B.success, boxShadow: `0 0 8px ${B.success}` }} />
-            <span style={{ color: B.muted, fontSize: 11 }}>All systems live</span>
-          </div>
-        </div>
-      </div>
+// ═══ UTILS ══════════════════════════════════════════════════════════════════
 
-      {/* Main */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-        {/* Topbar */}
-        <div style={{ height: 58, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px", borderBottom: `1px solid ${B.border}`, background: B.surface, flexShrink: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <button onClick={() => setSidebarOpen(p => !p)} style={{ background: "none", border: "none", color: B.muted, cursor: "pointer", fontSize: 18, padding: 4 }}>☰</button>
-            <span style={{ color: B.text, fontWeight: 700 }}>{NAV.find(n => n.id === view)?.label}</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <div style={{ background: B.accentGlow, border: `1px solid ${B.accent}44`, borderRadius: 8, padding: "5px 12px", display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ fontSize: 14 }}>{M.flag}</span>
-              <span style={{ color: B.accent, fontSize: 12, fontWeight: 700 }}>{M.name} · {M.currency}</span>
-            </div>
-            <div style={{ position: "relative", cursor: "pointer" }}>
-              <span style={{ fontSize: 18, color: B.muted }}>🔔</span>
-              <div style={{ position: "absolute", top: -2, right: -2, width: 8, height: 8, borderRadius: "50%", background: B.danger }} />
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ width: 32, height: 32, borderRadius: "50%", background: `linear-gradient(135deg, ${B.accent}, #0096FF)`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 12, color: "#fff" }}>AO</div>
-              <span style={{ color: B.text, fontWeight: 600, fontSize: 13 }}>Dr. Okonkwo</span>
-            </div>
-          </div>
-        </div>
+const M = () => MARKETS[market];
+const fmt = n => M().sym + n.toLocaleString();
+const dep = a => market === 'NG' ? a.depNG : a.depKE;
 
-        {/* Content */}
-        <div style={{ flex: 1, overflowY: "auto", padding: 24 }}>
-          {views[view]}
-        </div>
-      </div>
-    </div>
-  );
+// ═══ NAV ════════════════════════════════════════════════════════════════════
+
+function showView(id, el) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('view-' + id).classList.add('active');
+  if (el) el.classList.add('active');
+  else {
+    document.querySelectorAll('.nav-item').forEach(n => {
+      if (n.textContent.toLowerCase().includes(id.replace('-','').substring(0,5))) n.classList.add('active');
+    });
+  }
+  const titles = { dashboard:'Dashboard', denttrack:'DentTrack', appointments:'Appointments', prebooking:'Pre-Booking', whatsapp:'WhatsApp', compliance:'Compliance', finance:'Financials' };
+  document.getElementById('page-title').textContent = titles[id] || id;
+  renderView(id);
 }
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('collapsed');
+}
+
+// ═══ MARKET ═════════════════════════════════════════════════════════════════
+
+function setMarket(m, el) {
+  market = m;
+  document.querySelectorAll('.market-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('market-pill').textContent = M().flag + ' ' + M().name + ' · ' + M().sym;
+  document.getElementById('dash-date').innerHTML = 'Monday, 9 March 2026 &nbsp;' + M().flag + ' ' + M().city;
+  document.getElementById('dash-market').textContent = M().name;
+  const cur = document.querySelector('.view.active');
+  if (cur) renderView(cur.id.replace('view-',''));
+}
+
+// ═══ RENDER ═════════════════════════════════════════════════════════════════
+
+function renderView(id) {
+  if (id === 'dashboard')    renderDashboard();
+  if (id === 'denttrack')    renderDentTrack();
+  if (id === 'appointments') renderAppointments();
+  if (id === 'prebooking')   renderPreBooking();
+  if (id === 'whatsapp')     renderWhatsApp();
+  if (id === 'compliance')   renderCompliance();
+  if (id === 'finance')      renderFinance();
+}
+
+// ── Dashboard ──
+function renderDashboard() {
+  const paidRev = APTS.filter(a => a.paid).reduce((s,a) => s + dep(a), 0);
+  document.getElementById('dash-rev').textContent = fmt(paidRev);
+  document.getElementById('dash-collected').textContent = fmt(M().collected) + ' collected';
+  document.getElementById('dash-target').textContent = 'Target: ' + fmt(M().target);
+  const pct = Math.round(M().collected / M().target * 100);
+  document.getElementById('dash-bar').style.width = pct + '%';
+
+  // Mini chart
+  const mc = document.getElementById('mini-chart');
+  const revs = M().rev.slice(1);
+  const maxR = Math.max(...revs);
+  mc.innerHTML = DAYS.map((d,i) => {
+    const h = Math.round((revs[i] / maxR) * 70);
+    const v = revs[i] >= 1000 ? (revs[i]/1000).toFixed(1)+'k' : revs[i];
+    return `<div class="mini-bar-wrap">
+      <span class="mini-bar-val">${M().sym}${v}</span>
+      <div class="mini-bar" style="height:${h}px"></div>
+      <span class="mini-bar-label">${d}</span>
+    </div>`;
+  }).join('');
+
+  // Appointments
+  const da = document.getElementById('dash-apts');
+  da.innerHTML = APTS.slice(0,5).map(a => `
+    <div class="list-row apt-row ${a.paid?'':'pending'}" style="margin-bottom:8px">
+      <div class="row-left">
+        <span class="apt-time">${a.time}</span>
+        <div><div class="row-name">${a.patient}</div><div class="row-sub">${a.type}</div></div>
+      </div>
+      <div class="row-right">
+        <span style="color:var(--muted);font-size:12px">${fmt(dep(a))}</span>
+        <span class="badge ${a.paid?'badge-success':'badge-warning'}">${a.paid?'Paid':'Pending'}</span>
+      </div>
+    </div>`).join('');
+}
+
+// ── DentTrack ──
+function renderDentTrack() {
+  const total = JOBS_DATA.length;
+  const done  = completed.size;
+  const pct   = Math.round(done / total * 100);
+  document.getElementById('dt-pct').textContent   = pct + '%';
+  document.getElementById('dt-count').textContent = done + '/' + total + ' complete';
+  document.getElementById('dt-bar').style.width   = pct + '%';
+  const allDone = done === total;
+  document.getElementById('dt-status').textContent = allDone ? '✅ All done!' : (total - done) + ' remaining';
+  document.getElementById('dt-status').style.color = allDone ? 'var(--success)' : 'var(--accent)';
+
+  // Team
+  document.getElementById('team-grid').innerHTML = STAFF.map(s => `
+    <div class="team-pill">
+      <div class="team-avatar" style="background:${s.color}">${s.av}</div>
+      <div><div class="team-name">${s.name}</div><div class="team-role">${s.role}</div></div>
+      <div class="online-dot"></div>
+    </div>`).join('');
+
+  // Job categories
+  const cats = [...new Set(JOBS_DATA.map(j => j.cat))];
+  document.getElementById('job-categories').innerHTML = cats.map(cat => {
+    const jobs = JOBS_DATA.filter(j => j.cat === cat);
+    const catDone = jobs.filter(j => completed.has(j.id)).length;
+    return `<div class="card" style="margin-bottom:0">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div class="card-title" style="margin:0">${cat}</div>
+        <span class="badge ${catDone===jobs.length?'badge-success':'badge-default'}">${catDone}/${jobs.length}</span>
+      </div>
+      ${jobs.map(j => `
+        <div class="check-row ${completed.has(j.id)?'done':''}" onclick="toggleJob('${j.id}')">
+          <div class="checkbox">${completed.has(j.id)?'✓':''}</div>
+          <span class="check-text">${j.text}</span>
+          <span class="badge badge-default">${j.role}</span>
+        </div>`).join('')}
+    </div>`;
+  }).join('<div style="height:12px"></div>');
+
+  // Assign buttons
+  document.getElementById('assign-btns').innerHTML = STAFF.map(s => `
+    <div class="assign-btn ${selectedStaff===s.id?'selected':''}" onclick="selectStaff(${s.id})">${s.name.split(' ')[0]}</div>`).join('');
+
+  // Tasks
+  renderTasks();
+}
+
+function toggleJob(id) {
+  completed.has(id) ? completed.delete(id) : completed.add(id);
+  renderDentTrack();
+}
+
+function selectStaff(id) {
+  selectedStaff = selectedStaff === id ? null : id;
+  document.getElementById('assign-btns').innerHTML = STAFF.map(s => `
+    <div class="assign-btn ${selectedStaff===s.id?'selected':''}" onclick="selectStaff(${s.id})">${s.name.split(' ')[0]}</div>`).join('');
+}
+
+function addTask() {
+  const txt = document.getElementById('task-input').value.trim();
+  if (!txt || !selectedStaff) return;
+  tasks.push({ id:'t'+Date.now(), text:txt, to:selectedStaff, deadline:'17:00', done:false });
+  document.getElementById('task-input').value = '';
+  selectedStaff = null;
+  renderDentTrack();
+}
+
+function renderTasks() {
+  const tl = document.getElementById('task-list');
+  if (!tl) return;
+  tl.innerHTML = tasks.map(t => {
+    const s = STAFF.find(x => x.id === t.to);
+    return `<div class="list-row">
+      <div class="row-left">
+        <div onclick="toggleTask('${t.id}')" style="width:20px;height:20px;border-radius:5px;border:2px solid ${t.done?'var(--success)':'var(--border)'};background:${t.done?'var(--success)':'transparent'};cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;color:#fff">${t.done?'✓':''}</div>
+        <span style="${t.done?'text-decoration:line-through;color:var(--muted)':'color:var(--text)'};font-size:14px">${t.text}</span>
+      </div>
+      <div class="row-right">
+        ${s?`<div class="team-avatar" style="width:26px;height:26px;font-size:10px;background:${s.color}">${s.av}</div>`:''}
+        <span style="color:var(--muted);font-size:12px">${t.deadline}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleTask(id) {
+  tasks = tasks.map(t => t.id === id ? {...t, done:!t.done} : t);
+  renderTasks();
+}
+
+// ── Appointments ──
+function renderAppointments() {
+  document.getElementById('apt-list').innerHTML = APTS.map(a => `
+    <div class="list-row apt-row ${a.paid?'':'pending'}" style="margin-bottom:8px">
+      <div class="row-left">
+        <span class="apt-time">${a.time}</span>
+        <div><div class="row-name">${a.patient}</div><div class="row-sub">${a.type}</div></div>
+      </div>
+      <div class="row-right">
+        <span style="color:var(--muted);font-size:13px">${fmt(dep(a))}</span>
+        <span class="badge ${a.paid?'badge-success':'badge-warning'}">${a.paid?'Paid':'Pending'}</span>
+      </div>
+    </div>`).join('');
+}
+
+// ── Pre-Booking ──
+function renderPreBooking() {
+  document.getElementById('pb-phone-label').textContent = 'WhatsApp (' + M().phone + ')';
+  document.getElementById('pb-phone').placeholder = M().phone + ' 800 000 0000';
+  updateDeposit();
+}
+
+function updateDeposit() {
+  const sel = document.getElementById('pb-type').value;
+  if (!sel) { document.getElementById('pb-deposit-display').textContent = M().sym + '0'; return; }
+  const parts = sel.split('|');
+  const amt = market === 'NG' ? parseInt(parts[0]) : parseInt(parts[1]);
+  document.getElementById('pb-deposit-display').textContent = fmt(amt);
+}
+
+function submitBooking() {
+  const name  = document.getElementById('pb-name').value.trim();
+  const phone = document.getElementById('pb-phone').value.trim();
+  const sel   = document.getElementById('pb-type').value;
+  if (!name || !phone || !sel) { alert('Please fill in patient name, WhatsApp number and treatment type.'); return; }
+  const parts = sel.split('|');
+  const amt = market === 'NG' ? parseInt(parts[0]) : parseInt(parts[1]);
+  const date  = document.getElementById('pb-date').value || 'their appointment date';
+  const time  = document.getElementById('pb-time').value || 'the scheduled time';
+  document.getElementById('pb-wa-preview').textContent =
+    `"Hi ${name}, your appointment at SmileCare Dental on ${date} at ${time} is reserved. Please pay your deposit of ${fmt(amt)} to confirm: [payment link] — SmileCare Dental"`;
+  document.getElementById('booking-form-card').style.display = 'none';
+  document.getElementById('booking-success').style.display = 'block';
+}
+
+function resetBooking() {
+  document.getElementById('pb-name').value = '';
+  document.getElementById('pb-phone').value = '';
+  document.getElementById('pb-email').value = '';
+  document.getElementById('pb-date').value = '';
+  document.getElementById('pb-time').value = '';
+  document.getElementById('pb-type').value = '';
+  document.getElementById('pb-deposit-display').textContent = M().sym + '0';
+  document.getElementById('booking-form-card').style.display = 'block';
+  document.getElementById('booking-success').style.display = 'none';
+}
+
+// ── WhatsApp ──
+function renderWhatsApp() {
+  const pending = APTS.filter(a => !a.paid);
+  document.getElementById('wa-pending').innerHTML = pending.map(a => `
+    <div class="list-row" style="margin-bottom:8px">
+      <div class="row-left">
+        <div><div class="row-name">${a.patient}</div><div class="row-sub">${a.time} · ${fmt(dep(a))}</div></div>
+      </div>
+      <div class="row-right">
+        <button class="btn btn-sm ${waSent.has(a.patient)?'btn-ghost':'btn-gold'}" onclick="sendWA('${a.patient}',this)">
+          ${waSent.has(a.patient)?'✓ Sent':'💬 Chase'}
+        </button>
+      </div>
+    </div>`).join('');
+}
+
+function sendWA(patient, btn) {
+  waSent.add(patient);
+  btn.className = 'btn btn-sm btn-ghost';
+  btn.textContent = '✓ Sent';
+}
+
+// ── Compliance ──
+function renderCompliance() {
+  const icons   = { compliant:'✅', review:'⏰', overdue:'🚨' };
+  const badges  = { compliant:'badge-success', review:'badge-warning', overdue:'badge-danger' };
+  document.getElementById('compliance-list').innerHTML = COMPLIANCE_DATA.map(c => `
+    <div class="list-row" style="margin-bottom:8px">
+      <div class="row-left">
+        <span style="font-size:18px">${icons[c.status]}</span>
+        <div><div class="row-name">${c.item}</div><div class="row-sub">${c.cat} · Expires ${c.expiry}</div></div>
+      </div>
+      <span class="badge ${badges[c.status]}">${c.status}</span>
+    </div>`).join('');
+}
+
+// ── Finance ──
+function renderFinance() {
+  const pct = Math.round(M().collected / M().target * 100);
+  document.getElementById('fin-collected').textContent   = fmt(M().collected);
+  document.getElementById('fin-pct').textContent         = pct + '% of target';
+  document.getElementById('fin-target').textContent      = fmt(M().target);
+  document.getElementById('fin-deposits').textContent    = fmt(M().deposits);
+  document.getElementById('fin-noshow').textContent      = fmt(M().noshow);
+  document.getElementById('fin-bar').style.width         = pct + '%';
+  document.getElementById('fin-left-label').textContent  = fmt(M().collected);
+  document.getElementById('fin-remaining').textContent   = fmt(M().target - M().collected) + ' remaining';
+
+  const revs = M().rev.slice(1);
+  const maxR = Math.max(...revs);
+  document.getElementById('fin-chart').innerHTML = DAYS.map((d,i) => {
+    const h = Math.round((revs[i] / maxR) * 90);
+    const v = revs[i] >= 1000 ? (revs[i]/1000).toFixed(1)+'k' : revs[i];
+    return `<div class="mini-bar-wrap">
+      <span class="mini-bar-val">${M().sym}${v}</span>
+      <div class="mini-bar" style="height:${h}px"></div>
+      <span class="mini-bar-label">${d}</span>
+    </div>`;
+  }).join('');
+}
+
+// ═══ INIT ════════════════════════════════════════════════════════════════════
+renderDashboard();
+</script>
+</body>
+</html>
